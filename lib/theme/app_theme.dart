@@ -6,34 +6,36 @@ class AppTheme {
   AppTheme._();
 
   // --- Brand & Semantic Colors ---
-  /// MoMo Primary Magenta/Pink
-  static const Color primary = Color(0xFFD82D8B);
+  /// MoMo Primary — "Branding color Primary" of MoMo Design System
+  /// (https://ds.momoapp.vn/9346742a0/p/773202-color).
+  /// Lưu ý: bản Mini App guideline dùng `#D82D8B`; app dùng màu chính thức của DS.
+  static const Color primary = Color(0xFFEB2F96);
 
-  /// Darker shade of MoMo Primary for depth
-  static const Color primaryDark = Color(0xFFAF176D);
+  /// Darker shade of MoMo Primary for depth (cùng hue/sat, L -12%)
+  static const Color primaryDark = Color(0xFFD10A77);
 
   /// MoMo Secondary - Light pink background for icons and badges
   static const Color secondary = Color(0xFFFFD6E7);
 
-  /// Default text color
+  /// Default text color (Black-17)
   static const Color textDefault = Color(0xFF303233);
 
-  /// Uppercase / Secondary text color
+  /// Uppercase / Secondary text color (Black-14)
   static const Color textSecondary = Color(0xFF565656);
 
-  /// Hint text / Strikethrough
+  /// Hint text / Strikethrough (Black-12)
   static const Color textHint = Color(0xFF727272);
 
-  /// Placeholder / Disabled icon border
+  /// Placeholder / Disabled icon border (Black-09)
   static const Color placeholder = Color(0xFFB9B9B9);
 
-  /// Page background & disabled container
+  /// Page background & disabled container (Black-02)
   static const Color background = Color(0xFFF9F9F9);
 
   /// Pure white surface
   static const Color white = Color(0xFFFFFFFF);
 
-  /// Border color for cards and fields
+  /// Border color for cards and fields (Black-04)
   static const Color border = Color(0xFFE8E8E8);
 
   // --- Status Colors ---
