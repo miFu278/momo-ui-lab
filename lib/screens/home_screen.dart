@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/mock_services.dart';
+import '../data/wallet_store.dart';
 import '../models/service_item.dart';
 import '../theme/app_theme.dart';
 
@@ -14,7 +15,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _isBalanceVisible = true;
-  final int _balance = 9850000;
 
   @override
   Widget build(BuildContext context) {
@@ -315,15 +315,20 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: AppTheme.spacingXS),
           Align(
             alignment: Alignment.centerLeft,
-            child: Text(
-              _isBalanceVisible
-                  ? AppTheme.formatCurrency(_balance)
-                  : '******** đ',
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: AppTheme.textDefault,
-              ),
+            child: ValueListenableBuilder<int>(
+              valueListenable: WalletStore.balance,
+              builder: (context, balance, _) {
+                return Text(
+                  _isBalanceVisible
+                      ? AppTheme.formatCurrency(balance)
+                      : '******** đ',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textDefault,
+                  ),
+                );
+              },
             ),
           ),
           const Divider(height: AppTheme.spacingL),
@@ -624,37 +629,38 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: AppTheme.spacingM),
 
-          // Bill item 1: Electricity
-          _buildQuickBillRow(
-            icon: Icons.bolt_rounded,
-            title: 'Hóa đơn tiền điện EVN',
-            customerCode: 'PE01000123456',
-            amount: 450000,
-            onPay: () =>
-                Navigator.pushNamed(context, '/bill-payment/electricity'),
-          ),
-          const Divider(height: AppTheme.spacingL),
-
-          // Bill item 2: Water
-          _buildQuickBillRow(
-            icon: Icons.water_drop_rounded,
-            title: 'Hóa đơn tiền nước SAWACO',
-            customerCode: '14123456',
-            amount: 185000,
-            onPay: () => Navigator.pushNamed(context, '/bill-payment/water'),
+          // Danh sách hóa đơn lấy từ WalletStore: thanh toán xong sẽ tự biến mất
+          ValueListenableBuilder<List<PendingBill>>(
+            valueListenable: WalletStore.pendingBills,
+            builder: (context, bills, _) {
+              if (bills.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppTheme.spacingM),
+                  child: Text(
+                    'Không có hóa đơn chưa thanh toán',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppTheme.textHint,
+                    ),
+                  ),
+                );
+              }
+              return Column(
+                children: [
+                  for (int i = 0; i < bills.length; i++) ...[
+                    if (i > 0) const Divider(height: AppTheme.spacingL),
+                    _buildQuickBillRow(bills[i]),
+                  ],
+                ],
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildQuickBillRow({
-    required IconData icon,
-    required String title,
-    required String customerCode,
-    required int amount,
-    required VoidCallback onPay,
-  }) {
+  Widget _buildQuickBillRow(PendingBill bill) {
     return Row(
       children: [
         Container(
@@ -664,7 +670,7 @@ class _HomeScreenState extends State<HomeScreen> {
             color: AppTheme.secondary,
             borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
           ),
-          child: Icon(icon, color: AppTheme.primary, size: 22),
+          child: Icon(bill.icon, color: AppTheme.primary, size: 22),
         ),
         const SizedBox(width: AppTheme.spacingS),
         Expanded(
@@ -672,7 +678,7 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                title,
+                bill.title,
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -680,7 +686,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               Text(
-                'Mã: $customerCode',
+                'Mã: ${bill.customerCode}',
                 style: const TextStyle(
                   fontSize: 12,
                   color: AppTheme.textHint,
@@ -693,7 +699,7 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              AppTheme.formatCurrency(amount),
+              AppTheme.formatCurrency(bill.amount),
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -702,7 +708,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: AppTheme.spacingXXS),
             ElevatedButton(
-              onPressed: onPay,
+              onPressed: () => Navigator.pushNamed(
+                context,
+                '/bill-payment/${bill.serviceId}',
+              ),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(80, 28),
                 padding: const EdgeInsets.symmetric(horizontal: 10),

@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../data/mock_services.dart';
+import '../data/wallet_store.dart';
 import '../models/service_item.dart';
 import '../theme/app_theme.dart';
 
@@ -76,6 +77,18 @@ class _BillFormScreenState extends State<BillFormScreen> {
         ) ??
         config.defaultAmount;
 
+    // Số dư hiển thị trên hoá đơn là số dư trước khi trừ.
+    final paymentSource =
+        'Ví MoMo (Số dư: ${AppTheme.formatCurrency(WalletStore.balance.value)} đ)';
+
+    // Trừ tiền + bỏ hoá đơn khỏi danh sách chờ; store tự chặn nếu không đủ số dư.
+    if (!WalletStore.pay(
+      serviceId: config.serviceId,
+      amount: parsedAmount,
+    )) {
+      return;
+    }
+
     // Generate simulated transaction ID
     final randomSuffix = (1000 + Random().nextInt(9000)).toString();
     final transactionId = 'MOM20261010-$randomSuffix';
@@ -90,7 +103,7 @@ class _BillFormScreenState extends State<BillFormScreen> {
       amount: parsedAmount,
       transactionId: transactionId,
       timestamp: DateTime.now(),
-      paymentSource: 'Ví MoMo (Số dư: 9.850.000 đ)',
+      paymentSource: paymentSource,
     );
 
     Navigator.pushNamed(
@@ -415,6 +428,9 @@ class _BillFormScreenState extends State<BillFormScreen> {
                 if (num == null || num <= 0) {
                   return 'Số tiền thanh toán phải lớn hơn 0';
                 }
+                if (num > WalletStore.balance.value) {
+                  return 'Số dư ví không đủ (còn ${AppTheme.formatCurrency(WalletStore.balance.value)} đ)';
+                }
                 return null;
               },
               onChanged: (_) => setState(() {}),
@@ -469,11 +485,11 @@ class _BillFormScreenState extends State<BillFormScreen> {
               ),
             ),
             const SizedBox(width: AppTheme.spacingM),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Nguồn tiền: Ví MoMo',
                     style: TextStyle(
                       fontSize: 14,
@@ -481,13 +497,18 @@ class _BillFormScreenState extends State<BillFormScreen> {
                       color: AppTheme.textDefault,
                     ),
                   ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Số dư khả dụng: 9.850.000 đ',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textHint,
-                    ),
+                  const SizedBox(height: 2),
+                  ValueListenableBuilder<int>(
+                    valueListenable: WalletStore.balance,
+                    builder: (context, balance, _) {
+                      return Text(
+                        'Số dư khả dụng: ${AppTheme.formatCurrency(balance)} đ',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textHint,
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
